@@ -8,10 +8,10 @@ import (
 )
 
 func tmp() {
-	inputDir := ""
-	outputDir := ""
-	var ignoreNameList []string
-	targetFileSuffix := ""
+	//inputDir := ""
+	//outputDir := ""
+	//var ignoreNameList []string
+	//targetFileSuffix := ""
 
 	// make sure out put dir is not exist
 	// load all file
@@ -37,7 +37,7 @@ func isNameMatchSuffix(targetSuffix string, name string) bool {
 	return false
 }
 func main() {
-	inputFile := "autoFixTs/SDataVideoAD.ts"
+	inputFile := "autoFixTs/SDataShare.ts"
 	outputFile := "autoFixTs/output.ts"
 
 	fileContent, err := ioutil.ReadFile(inputFile)
@@ -72,11 +72,11 @@ func handleTSContent(content string) string {
 				tmpChar = ""
 			}
 		} else if char == ")" {
-			contentList = append(contentList, ")")
 			if !isSpace(tmpChar) {
 				contentList = append(contentList, tmpChar)
 				tmpChar = ""
 			}
+			contentList = append(contentList, ")")
 		} else {
 			tmpChar += char
 		}
