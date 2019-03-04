@@ -97,14 +97,19 @@ func cutFileInSize(leftSize int64,canFixFilePool FileDetailPool){
 func getFileFromTargetDir(filePool []*FileDetail, targetDirPath string,totalSize int64,ignoreFileList map[string]int) ([]*FileDetail,int64) {
 	var canFixFilePool []*FileDetail
 	var tmpSize int64 = 0
+	var tmpTotalSize int64 = 0
 	for _,file := range filePool{
 		if strings.HasPrefix(file.FilePath,targetDirPath) && !isFileInIgnoreList(file,ignoreFileList){
 
 			canFixFilePool = append(canFixFilePool,file)
 		}else{
 			tmpSize += file.FileSize
+			fmt.Println("can not fize file ",file.FilePath)
 		}
+		tmpTotalSize += file.FileSize
 	}
+	fmt.Println("total size ",tmpTotalSize)
+
 	return canFixFilePool,totalSize-tmpSize
 }
 func isFileInIgnoreList(fileDetail *FileDetail, ignoreList map[string]int) bool {
