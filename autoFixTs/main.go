@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -8,19 +9,69 @@ import (
 	"strings"
 )
 
+type config struct {
+	InputDir             string
+	OutputDir            string
+	IgnoreNameList       []string
+	TargetFileSuffix     string
+	ParameterKeyPrefix   string
+	ParameterValuePrefix string
+}
+
+var parameterKeyPrefix = "randomKey_"
+var parameterValuePrefix = "randomValue_"
+
+func main2() {
+	testConfig := &config{
+		InputDir:             "E:/porject/zombieDefense/MainProject/assets/script",
+		OutputDir:            "E:/porject/koudaitafang/MainProject/assets/script",
+		TargetFileSuffix:     "ts",
+		ParameterKeyPrefix:   "randomKey_",
+		ParameterValuePrefix: "randomValue_",
+	}
+	testConfig.IgnoreNameList = append(testConfig.IgnoreNameList, "ald-game.js")
+	testConfig.IgnoreNameList = append(testConfig.IgnoreNameList, "ald-game-conf.js")
+	testConfig.IgnoreNameList = append(testConfig.IgnoreNameList, "wx_mini_game.d.ts")
+	testConfig.IgnoreNameList = append(testConfig.IgnoreNameList, "wxAPI.ts")
+	testConfig.IgnoreNameList = append(testConfig.IgnoreNameList, "gcfg.ts")
+	content, _ := json.Marshal(testConfig)
+	ioutil.WriteFile("testConfig.json", content, 0666)
+}
 func main() {
-	inputDir := "E:/porject/zombieDefense/MainProject/assets/script"
-	outputDir := "E:/porject/koudaitafang/MainProject/assets/script"
-	var ignoreNameList []string
-	ignoreNameList = append(ignoreNameList, "ald-game.js")
-	ignoreNameList = append(ignoreNameList, "ald-game-conf.js")
-	ignoreNameList = append(ignoreNameList, "wx_mini_game.d.ts")
-	ignoreNameList = append(ignoreNameList, "wxAPI.ts")
-	ignoreNameList = append(ignoreNameList, "gcfg.ts")
-	targetFileSuffix := "ts"
+	if len(os.Args) != 2 {
+		fmt.Println(" not found config dir ")
+		return
+	}
+	configContent, err := ioutil.ReadFile(os.Args[1])
+	if err != nil {
+		fmt.Println(" can't open config file ", os.Args[1])
+		return
+	}
+	configInfo := &config{}
+	err = json.Unmarshal(configContent, configInfo)
+	if err != nil {
+		fmt.Println(" error on decode config  ", os.Args[1])
+		return
+	}
+
+	//inputDir := "E:/porject/zombieDefense/MainProject/assets/script"
+	//outputDir := "E:/porject/koudaitafang/MainProject/assets/script"
+	//var ignoreNameList []string
+	//ignoreNameList = append(ignoreNameList, "ald-game.js")
+	//ignoreNameList = append(ignoreNameList, "ald-game-conf.js")
+	//ignoreNameList = append(ignoreNameList, "wx_mini_game.d.ts")
+	//ignoreNameList = append(ignoreNameList, "wxAPI.ts")
+	//ignoreNameList = append(ignoreNameList, "gcfg.ts")
+	//targetFileSuffix := "ts"
+	inputDir := configInfo.InputDir
+	outputDir := configInfo.OutputDir
+	ignoreNameList := configInfo.IgnoreNameList
+	targetFileSuffix := configInfo.TargetFileSuffix
+	parameterKeyPrefix = configInfo.ParameterKeyPrefix
+	parameterValuePrefix = configInfo.ParameterValuePrefix
 
 	// make sure out put dir is not exist
-	if _, err := os.Stat(outputDir); !os.IsNotExist(err) {
+	if _, err = os.Stat(outputDir); !os.IsNotExist(err) {
 		fmt.Println("out put dir ", outputDir, " must be empty")
 		return
 	}
@@ -235,8 +286,8 @@ func getRandomParameter(isEmptyParameter bool) string {
 	}
 	randomCount := int(rand.Int31()%3) + valueCount
 	for i := 0; i < randomCount; i++ {
-		k := fmt.Sprintf("%s%d", "randomKey_", i)
-		v := fmt.Sprintf("%s%d", "randomValue_", i)
+		k := fmt.Sprintf("%s%d", parameterKeyPrefix, i)
+		v := fmt.Sprintf("%s%d", parameterValuePrefix, i)
 		result += k + "=" + "\"" + v + "\""
 		if i != randomCount-1 {
 			result += ","
