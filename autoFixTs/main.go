@@ -9,10 +9,15 @@ import (
 )
 
 func main() {
-	inputDir := ""
-	outputDir := ""
+	inputDir := "E:/porject/zombieDefense/MainProject/assets/script"
+	outputDir := "E:/porject/koudaitafang/MainProject/assets/script"
 	var ignoreNameList []string
-	targetFileSuffix := ""
+	ignoreNameList = append(ignoreNameList, "ald-game.js")
+	ignoreNameList = append(ignoreNameList, "ald-game-conf.js")
+	ignoreNameList = append(ignoreNameList, "wx_mini_game.d.ts")
+	ignoreNameList = append(ignoreNameList, "wxAPI.ts")
+	ignoreNameList = append(ignoreNameList, "gcfg.ts")
+	targetFileSuffix := "ts"
 
 	// make sure out put dir is not exist
 	if _, err := os.Stat(outputDir); !os.IsNotExist(err) {
@@ -29,10 +34,11 @@ func main() {
 	for _, fileInfo := range allFileList {
 		currentCount++
 		if fileInfo.isDir {
-			// make sure target dir exist
-			makeSureDir(outputDir + "/" + fileInfo.subDir)
+
 			continue
 		}
+		// make sure target dir exist
+		makeSureDir(outputDir + fileInfo.subDir + "/")
 		// load file
 		fileContent, err := ioutil.ReadFile(fileInfo.dir + "/" + fileInfo.name)
 		if err != nil {
@@ -47,9 +53,13 @@ func main() {
 			fileContent = ([]byte)(handleTSContent((string)(fileContent)))
 		}
 		// do copy
-		ioutil.WriteFile(outputDir+"/"+fileInfo.subDir+"/"+fileInfo.name, fileContent, 0666)
+		err = ioutil.WriteFile(outputDir+fileInfo.subDir+"/"+fileInfo.name, fileContent, 0666)
+		if err != nil {
+			fmt.Println("error on write file ", err, outputDir+fileInfo.subDir+"/"+fileInfo.name)
+			return
+		}
 		// print process
-		fmt.Println("process: ", currentCount, totalCount)
+		fmt.Println("process: ", currentCount, totalCount, outputDir+fileInfo.subDir+"/"+fileInfo.name)
 	}
 
 	// print done
@@ -103,7 +113,7 @@ func isNameMatchSuffix(targetSuffix string, name string) bool {
 	return false
 }
 func main1() {
-	inputFile := "autoFixTs/SDataShare.ts"
+	inputFile := "autoFixTs/AudioManager.ts"
 	outputFile := "autoFixTs/output.ts"
 
 	fileContent, err := ioutil.ReadFile(inputFile)
@@ -131,18 +141,12 @@ func handleTSContent(content string) string {
 				contentList = append(contentList, tmpChar)
 				tmpChar = ""
 			}
-		} else if char == "(" {
+		} else if char == "(" || char == ")" || char == "{" || char == "}" || char == "," {
+			if !isSpace(tmpChar) {
+				contentList = append(contentList, tmpChar)
+				tmpChar = ""
+			}
 			contentList = append(contentList, "(")
-			if !isSpace(tmpChar) {
-				contentList = append(contentList, tmpChar)
-				tmpChar = ""
-			}
-		} else if char == ")" {
-			if !isSpace(tmpChar) {
-				contentList = append(contentList, tmpChar)
-				tmpChar = ""
-			}
-			contentList = append(contentList, ")")
 		} else {
 			tmpChar += char
 		}
@@ -171,7 +175,7 @@ func handleTSContent(content string) string {
 				result = doFixResult(result, targetResultRightIncludeIndex, contentList, targetLeftIncludeIndex, targetRightIncludeIndex)
 				continue
 			}
-			if !isValidChar(char) {
+			if !isValidChar(char) && char != ":" && char != "<" && char != ">" {
 				status = "left"
 				continue
 			}
@@ -191,14 +195,23 @@ func doFixResult(result string, resultRightIncludeIndex int, contentList []strin
 	if targetKeyWord == "for" {
 		return result
 	}
+	if targetKeyWord == "switch" {
+		return result
+	}
 	if targetKeyWord == "while" {
 		return result
 	}
 	if targetKeyWord == "catch" {
 		return result
 	}
+	if targetKeyWord == "function" {
+		return result
+	}
 	tmpIndex -= 1
 	if tmpIndex >= 0 && tmpIndex < len(contentList) && contentList[tmpIndex] == "get" {
+		return result
+	}
+	if tmpIndex >= 0 && tmpIndex < len(contentList) && contentList[tmpIndex] == "set" {
 		return result
 	}
 	if tmpIndex >= 0 && tmpIndex < len(contentList) && contentList[tmpIndex] == "new" {
@@ -291,6 +304,15 @@ func isValidParameterChar(char string) bool {
 		return true
 	}
 	if char == "=" {
+		return true
+	}
+	if char == "<" {
+		return true
+	}
+	if char == ">" {
+		return true
+	}
+	if char == "." {
 		return true
 	}
 	if char == "\"" {
