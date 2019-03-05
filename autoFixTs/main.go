@@ -4,23 +4,89 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/rand"
+	"os"
 	"strings"
 )
 
-func tmp() {
-	//inputDir := ""
-	//outputDir := ""
-	//var ignoreNameList []string
-	//targetFileSuffix := ""
+func main() {
+	inputDir := ""
+	outputDir := ""
+	var ignoreNameList []string
+	targetFileSuffix := ""
 
 	// make sure out put dir is not exist
+	if _, err := os.Stat(outputDir); !os.IsNotExist(err) {
+		fmt.Println("out put dir ", outputDir, " must be empty")
+		return
+	}
+
 	// load all file
-	// make sure target dir exist
-	// check is target suffix & not in ignore list
-	// do fix
-	// do copy
-	// print process
+	allFileList := loadAllFile(inputDir, "")
+
+	totalCount := len(allFileList)
+	currentCount := 0
+
+	for _, fileInfo := range allFileList {
+		currentCount++
+		if fileInfo.isDir {
+			// make sure target dir exist
+			makeSureDir(outputDir + "/" + fileInfo.subDir)
+			continue
+		}
+		// load file
+		fileContent, err := ioutil.ReadFile(fileInfo.dir + "/" + fileInfo.name)
+		if err != nil {
+			fmt.Println("error on load file ", fileInfo.dir, fileInfo.name)
+			continue
+		}
+		// check is target suffix & not in ignore list
+		if isNameMatchSuffix(targetFileSuffix, fileInfo.name) &&
+			!isNameInIgnoreList(ignoreNameList, fileInfo.name) {
+			// do fix
+
+			fileContent = ([]byte)(handleTSContent((string)(fileContent)))
+		}
+		// do copy
+		ioutil.WriteFile(outputDir+"/"+fileInfo.subDir+"/"+fileInfo.name, fileContent, 0666)
+		// print process
+		fmt.Println("process: ", currentCount, totalCount)
+	}
+
 	// print done
+	fmt.Println("succeed")
+}
+func makeSureDir(dirPath string) {
+	os.MkdirAll(dirPath, 0777)
+}
+
+type customFileInfo struct {
+	isDir  bool
+	name   string
+	dir    string
+	subDir string
+}
+
+func loadAllFile(filePath string, subDir string) []*customFileInfo {
+	fileList, err := ioutil.ReadDir(filePath)
+	if err != nil {
+		return nil
+	}
+	var fileInfoList []*customFileInfo
+
+	for _, file := range fileList {
+		if file.IsDir() {
+			customDir := filePath + "/" + file.Name()
+			fileInfoList = append(fileInfoList, &customFileInfo{isDir: true, dir: customDir, subDir: subDir})
+			childFilePath := loadAllFile(customDir, subDir+"/"+file.Name())
+			if nil != childFilePath {
+				fileInfoList = append(fileInfoList, childFilePath...)
+			}
+		} else {
+			fileInfoList = append(fileInfoList, &customFileInfo{isDir: false, dir: filePath, name: file.Name(), subDir: subDir})
+		}
+
+	}
+	return fileInfoList
 }
 func isNameInIgnoreList(ignoreList []string, name string) bool {
 	for i := 0; i < len(ignoreList); i++ {
@@ -36,7 +102,7 @@ func isNameMatchSuffix(targetSuffix string, name string) bool {
 	}
 	return false
 }
-func main() {
+func main1() {
 	inputFile := "autoFixTs/SDataShare.ts"
 	outputFile := "autoFixTs/output.ts"
 
