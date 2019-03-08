@@ -366,6 +366,9 @@ func isValidParameterChar(char string) bool {
 	if char == "." {
 		return true
 	}
+	if char == "_" {
+		return true
+	}
 	if char == "\"" {
 		return true
 	}
